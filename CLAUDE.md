@@ -204,3 +204,31 @@ opencv-python>=4.8.0
    - Objet → YOLO
 3. **Agir** → `pyautogui.click(x, y)`
 4. **Vérifier** → recapturer et analyser
+
+---
+
+## CE QUI MARCHE vs CE QUI NE MARCHE PAS
+
+### ✅ CE QUI MARCHE
+- **OCR sur zone croppée** : crop la zone d'intérêt AVANT l'OCR (ex: TikTok à gauche = crop 0-480)
+- **OCR pour texte lisible** : menus, boutons, titres
+- **YOLO pour objets** : personnes, objets visuels
+- **Clic droit + menu contextuel** : fonctionne bien sur TikTok
+
+### ❌ CE QUI NE MARCHE PAS
+- **OCR sur petits chiffres** : likes, comments trop petits → passer en paramètre
+- **VLM pour coordonnées** : qwen3-vl invente les positions
+- **OCR full screen** : se mélange avec texte des autres fenêtres
+- **UI-TARS** : timeout, ne répond pas
+
+### 💡 OPTIMISATIONS
+```python
+# MAUVAIS - OCR full screen
+result = find_text_on_screen("Copier le lien")  # Trouve dans toutes les fenêtres!
+
+# BON - OCR sur zone croppée
+screenshot = ImageGrab.grab()
+tiktok_zone = screenshot.crop((0, 0, 480, 600))  # Seulement TikTok
+tiktok_zone.save('temp.png')
+results = reader.readtext('temp.png')
+```
