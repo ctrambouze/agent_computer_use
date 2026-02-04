@@ -257,6 +257,71 @@ Date: {time.strftime('%Y-%m-%d %H:%M')}
     return filepath
 
 
+def mission_multiple(nb_videos=5):
+    """
+    Enchaine plusieurs videos TikTok et sauvegarde tout dans un seul fichier
+    """
+    print("=" * 50)
+    print(f"MISSION TIKTOK - {nb_videos} VIDEOS")
+    print("=" * 50)
+
+    resultats = []
+
+    for i in range(nb_videos):
+        print(f"\n--- Video {i+1}/{nb_videos} ---")
+
+        # Focus TikTok
+        pyautogui.click(100, 400)
+        time.sleep(0.5)
+
+        # Lire stats
+        stats = lire_stats_vlm()
+
+        # Copier lien
+        lien = copier_lien_video()
+
+        if lien:
+            compte = lien.split('/@')[1].split('/')[0] if '/@' in lien else "inconnu"
+            resultats.append({
+                "numero": i + 1,
+                "compte": compte,
+                "likes": stats.get("likes", "?"),
+                "comments": stats.get("comments", "?"),
+                "partages": stats.get("partages", "?"),
+                "lien": lien
+            })
+            print(f"OK: @{compte}")
+        else:
+            print("ECHEC copie lien")
+
+        # Passer a la video suivante (scroll down)
+        if i < nb_videos - 1:
+            print("Video suivante...")
+            pyautogui.click(240, 400)
+            time.sleep(0.3)
+            pyautogui.scroll(-3)
+            time.sleep(2)
+
+    # Sauvegarder tout dans un fichier
+    rapport = f"=== TikTok Analysis - {nb_videos} Videos ===\n"
+    rapport += f"Date: {time.strftime('%Y-%m-%d %H:%M')}\n\n"
+
+    for r in resultats:
+        rapport += f"--- Video {r['numero']} ---\n"
+        rapport += f"Compte: @{r['compte']}\n"
+        rapport += f"Likes: {r['likes']}\n"
+        rapport += f"Comments: {r['comments']}\n"
+        rapport += f"Partages: {r['partages']}\n"
+        rapport += f"Lien: {r['lien']}\n\n"
+
+    filepath = sauvegarder_sur_bureau(rapport, f"tiktok_{nb_videos}_videos.txt")
+    print(f"\n{'=' * 50}")
+    print(f"TERMINE - {len(resultats)}/{nb_videos} videos capturees")
+    print(f"Fichier: {filepath}")
+
+    return resultats
+
+
 if __name__ == "__main__":
     import sys
 
@@ -264,11 +329,17 @@ if __name__ == "__main__":
     if "--open" in sys.argv:
         ouvrir_tiktok_gauche()
 
-    # Lancer la mission
-    # Les stats sont en parametre car l'OCR ne les lit pas bien (trop petit)
-    mission_tiktok(
-        likes=sys.argv[sys.argv.index("--likes")+1] if "--likes" in sys.argv else "",
-        comments=sys.argv[sys.argv.index("--comments")+1] if "--comments" in sys.argv else "",
-        partages=sys.argv[sys.argv.index("--partages")+1] if "--partages" in sys.argv else "",
-        contenu=" ".join(sys.argv[sys.argv.index("--contenu")+1:]) if "--contenu" in sys.argv else ""
-    )
+    # Mode multiple videos
+    if "--multi" in sys.argv:
+        nb = 5
+        if "--nb" in sys.argv:
+            nb = int(sys.argv[sys.argv.index("--nb")+1])
+        mission_multiple(nb)
+    else:
+        # Mission simple
+        mission_tiktok(
+            likes=sys.argv[sys.argv.index("--likes")+1] if "--likes" in sys.argv else "",
+            comments=sys.argv[sys.argv.index("--comments")+1] if "--comments" in sys.argv else "",
+            partages=sys.argv[sys.argv.index("--partages")+1] if "--partages" in sys.argv else "",
+            contenu=" ".join(sys.argv[sys.argv.index("--contenu")+1:]) if "--contenu" in sys.argv else ""
+        )
