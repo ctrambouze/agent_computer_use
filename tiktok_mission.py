@@ -20,6 +20,10 @@ import pyautogui
 import pyperclip
 from PIL import ImageGrab
 import easyocr
+import requests
+import base64
+import json
+import re
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0.1
@@ -32,6 +36,74 @@ def get_reader():
     if _reader is None:
         _reader = easyocr.Reader(['fr', 'en'], gpu=True)
     return _reader
+
+
+def lire_stats_vlm():
+    """
+    Utilise le VLM pour LIRE les stats (likes, comments, partages)
+    IMPORTANT: Sur TikTok web, les stats ne sont visibles que dans la vue detail.
+    On doit d'abord cliquer sur la video pour ouvrir cette vue.
+    """
+    print("Lecture des stats avec VLM...")
+
+    # Sur TikTok web, cliquer sur la video ouvre la vue detail avec les stats
+    # Double-clic pour ouvrir (simple clic = pause/play)
+    print("Ouverture vue detail (double-clic)...")
+    pyautogui.doubleClick(350, 400)
+    time.sleep(2)
+
+    # Capture zone TikTok
+    screenshot = ImageGrab.grab()
+    tiktok_zone = screenshot.crop((0, 0, 800, 900))
+    tiktok_zone.save('_temp_stats.png')
+
+    # Encoder en base64
+    with open('_temp_stats.png', 'rb') as f:
+        img_base64 = base64.b64encode(f.read()).decode('utf-8')
+
+    # Prompt simple pour extraire les stats
+    prompt = """Regarde cette video TikTok et donne-moi les stats visibles.
+Reponds UNIQUEMENT avec ce format JSON:
+{"likes": "nombre", "comments": "nombre", "partages": "nombre"}
+
+Les stats sont souvent a droite de la video (coeur pour likes, bulle pour comments, fleche pour partages).
+Si tu vois des abreviations comme "1.2K" ou "500", ecris-les tels quels.
+Si une stat n'est pas visible, mets "?".
+"""
+
+    stats = {"likes": "?", "comments": "?", "partages": "?"}
+
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "qwen3-vl:30b",
+                "prompt": prompt,
+                "images": [img_base64],
+                "stream": False
+            },
+            timeout=60
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            result = data.get("response", "") or data.get("thinking", "")
+
+            # Chercher le JSON dans la reponse
+            match = re.search(r'\{[^}]+\}', result)
+            if match:
+                stats = json.loads(match.group())
+                print(f"Stats lues: {stats}")
+
+    except Exception as e:
+        print(f"Erreur VLM: {e}")
+
+    # Fermer la vue detail avec Escape
+    print("Fermeture vue detail...")
+    pyautogui.press('escape')
+    time.sleep(1)
+
+    return stats
 
 
 def ouvrir_tiktok_gauche():
@@ -127,11 +199,25 @@ def mission_tiktok(compte="", likes="", comments="", partages="", contenu=""):
     Mission complete: ouvre TikTok, copie le lien, sauvegarde sur le Bureau
 
     Args:
-        compte, likes, comments, partages, contenu: Infos manuelles (OCR trop petit)
+        compte, likes, comments, partages, contenu: Infos manuelles (optionnel)
     """
     print("=" * 50)
     print("MISSION TIKTOK")
     print("=" * 50)
+
+    # Focus Chrome AVANT tout - clic sur zone TikTok pour forcer le focus
+    pyautogui.click(240, 300)
+    time.sleep(0.5)
+
+    # Lire les stats avec VLM AVANT le clic droit (pour avoir la video visible)
+    if not likes or not comments:
+        stats = lire_stats_vlm()
+        if not likes:
+            likes = stats.get("likes", "?")
+        if not comments:
+            comments = stats.get("comments", "?")
+        if not partages:
+            partages = stats.get("partages", "?")
 
     # Copier le lien
     lien = copier_lien_video()
