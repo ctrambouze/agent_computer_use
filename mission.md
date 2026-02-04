@@ -80,3 +80,73 @@ L'agent GUI avec VLM (qwen3-vl) ne donne pas de coordonnées pixel précises - s
 - 2026-02-04 : Diagnostic complet, création chrome_utils.py et autres utils
 - 2026-02-04 : Ajout ocr_utils.py avec EasyOCR - FONCTIONNE pour coordonnées précises
 - 2026-02-04 : TikTok copier lien via OCR - SUCCES
+
+---
+
+# MISSIONS RÉUSSIES (Base de connaissances)
+
+## Mission 1: Copier lien TikTok (2026-02-04) ✅
+
+### Objectif
+Ouvrir TikTok, copier le lien d'une vidéo via clic droit, sauvegarder sur le Bureau.
+
+### Workflow qui marche
+
+```python
+# 1. Ouvrir TikTok à gauche
+subprocess.Popen(['cmd', '/c', 'start', 'chrome', 'https://www.tiktok.com'])
+time.sleep(4)
+pyautogui.hotkey('win', 'left')  # Ancrer à gauche
+time.sleep(5)  # Attendre chargement
+
+# 2. Clic droit au centre de la vidéo
+video_x, video_y = 240, 300  # Centre zone gauche
+pyperclip.copy('')  # IMPORTANT: vider clipboard avant
+pyautogui.rightClick(video_x, video_y)
+time.sleep(1.0)
+
+# 3. OCR sur zone croppée UNIQUEMENT (évite confusion avec autres fenêtres)
+screenshot = ImageGrab.grab()
+tiktok_zone = screenshot.crop((0, 0, 480, 600))  # CRITIQUE: crop avant OCR!
+tiktok_zone.save('_temp_menu.png')
+
+# 4. Trouver "Copier le lien" avec OCR
+reader = easyocr.Reader(['fr', 'en'], gpu=True)
+results = reader.readtext('_temp_menu.png')
+for (bbox, text, conf) in results:
+    if 'copier' in text.lower() and 'lien' in text.lower():
+        x1, y1 = bbox[0]
+        x2, y2 = bbox[2]
+        cx, cy = int((x1+x2)/2), int((y1+y2)/2)
+        pyautogui.click(cx, cy)
+        break
+
+# 5. Récupérer le lien
+time.sleep(0.5)
+lien = pyperclip.paste()
+# Vérifier que c'est bien un lien TikTok
+if 'tiktok.com' in lien:
+    print(f"Succès: {lien}")
+```
+
+### Fichiers utilisés
+- `tiktok_mission.py` - Script complet optimisé
+- `ocr_utils.py` - Fonctions OCR réutilisables
+
+### Points critiques
+1. **Crop AVANT OCR** - Sinon l'OCR trouve du texte dans d'autres fenêtres
+2. **Vider clipboard** - `pyperclip.copy('')` avant l'opération
+3. **Zone TikTok gauche** - crop(0, 0, 480, 600)
+4. **Attendre le menu** - `time.sleep(1.0)` après clic droit
+5. **Coordonnées vidéo** - Centre ≈ (240, 300) quand TikTok est à gauche
+
+### Résultat
+```
+Lien capturé: https://www.tiktok.com/@jolan.ai/video/7576328850699832598
+Fichier sauvé: C:\Users\MSI\Desktop\tiktok_jolan_ai.txt
+```
+
+### Ce qui NE marche PAS
+- ❌ VLM pour coordonnées (invente les positions)
+- ❌ OCR full screen (confusion avec terminal/autres fenêtres)
+- ❌ OCR pour petits chiffres (likes, comments - trop petit)
