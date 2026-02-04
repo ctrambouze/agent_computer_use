@@ -150,3 +150,51 @@ Fichier sauvé: C:\Users\MSI\Desktop\tiktok_jolan_ai.txt
 - ❌ VLM pour coordonnées (invente les positions)
 - ❌ OCR full screen (confusion avec terminal/autres fenêtres)
 - ❌ OCR pour petits chiffres (likes, comments - trop petit)
+- ❌ Stats sur vue "For You" (pas affichées sur TikTok web)
+
+---
+
+## Mission 2: Stats TikTok via VLM (2026-02-04) ✅
+
+### Découverte
+Sur TikTok web, les stats (likes, comments, partages) ne sont **PAS visibles** dans la vue "For You".
+Il faut **double-cliquer** sur la vidéo pour ouvrir la **vue détail** où les stats apparaissent à droite.
+
+### Workflow qui marche
+
+```python
+# 1. Double-clic pour ouvrir la vue detail
+pyautogui.doubleClick(350, 400)
+time.sleep(2)
+
+# 2. Capture la zone avec stats (plus large)
+screenshot = ImageGrab.grab()
+tiktok_zone = screenshot.crop((0, 0, 800, 900))
+
+# 3. VLM lit les stats (il PEUT lire du texte, juste pas donner de coordonnées)
+prompt = "Lis les stats: likes, comments, partages. Reponds en JSON."
+response = requests.post("http://localhost:11434/api/generate", json={
+    "model": "qwen3-vl:30b",
+    "prompt": prompt,
+    "images": [img_base64]
+})
+# Resultat: {"likes": "1.6M", "comments": "10.4K", "partages": "?"}
+
+# 4. Fermer la vue detail AVANT de copier le lien
+pyautogui.press('escape')
+time.sleep(1)
+
+# 5. Puis continuer avec clic droit + OCR pour copier le lien
+```
+
+### Points critiques
+1. **Double-clic** (pas simple clic) pour ouvrir la vue détail
+2. **VLM peut LIRE** du texte dans les images (juste pas les coordonnées)
+3. **Escape** pour fermer la vue détail avant le clic droit
+4. Les stats sont à **droite** de la vidéo dans la vue détail
+
+### Résultat
+```
+Stats lues: {'likes': '1.6M', 'comments': '10.4K', 'partages': '?'}
+Fichier: C:\Users\MSI\Desktop\tiktok_amz_ocean.txt
+```
