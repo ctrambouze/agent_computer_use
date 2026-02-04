@@ -49,7 +49,7 @@ def lire_stats_vlm():
     # Sur TikTok web, cliquer sur la video ouvre la vue detail avec les stats
     # Double-clic pour ouvrir (simple clic = pause/play)
     print("Ouverture vue detail (double-clic)...")
-    pyautogui.doubleClick(350, 400)
+    pyautogui.doubleClick(200, 400)
     time.sleep(2)
 
     # Capture zone TikTok
@@ -101,7 +101,7 @@ Si une stat n'est pas visible, mets "?".
     # Fermer la vue detail avec Escape
     print("Fermeture vue detail...")
     pyautogui.press('escape')
-    time.sleep(1)
+    time.sleep(0.5)
 
     return stats
 

@@ -188,10 +188,16 @@ time.sleep(1)
 ```
 
 ### Points critiques
-1. **Double-clic** (pas simple clic) pour ouvrir la vue détail
+1. **Double-clic à (200, 400)** - centre de la vidéo, loin du bouton "j'aime"
 2. **VLM peut LIRE** du texte dans les images (juste pas les coordonnées)
 3. **Escape** pour fermer la vue détail avant le clic droit
 4. Les stats sont à **droite** de la vidéo dans la vue détail
+
+### Temps de traitement
+- Ouverture TikTok + ancrage: ~10s
+- **VLM analyse image: ~5-10s** (le plus long)
+- Copie lien + sauvegarde: ~3s
+- **Total: ~15-20s par vidéo**
 
 ### Résultat
 ```
