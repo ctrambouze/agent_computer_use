@@ -3,94 +3,155 @@
 **GitHub**: https://github.com/ctrambouze/agent_computer_use
 
 ## IMPORTANT : Fichier Mission
-**Toujours lire `mission.md` en premier** - contient l'état actuel du travail en cours et l'historique des actions.
+**Toujours lire `mission.md` en premier** - contient l'état actuel du travail en cours.
 
-## Description du Projet
+---
 
-Agent IA autonome qui contrôle un ordinateur Windows via vision (capture d'écran) + actions (souris/clavier).
-Tourne 100% en local sur RTX 3090.
+## Stack Technique
 
-## Architecture
+| Composant | Technologie | Usage |
+|-----------|-------------|-------|
+| **OCR** | EasyOCR | Détection texte → coordonnées précises |
+| **Détection objets** | YOLO v8 (ultralytics) | Personnes, objets → bbox/coordonnées |
+| **VLM** | qwen3-vl:30b (Ollama) | Raisonnement, compréhension d'image |
+| **Automatisation** | PyAutoGUI | Souris, clavier, captures |
+| **Clipboard** | pyperclip | Copier/coller texte |
+| **Images** | Pillow (PIL) | Capture écran, manipulation images |
+| **GPU** | RTX 3090 24GB | CUDA pour OCR/YOLO/VLM |
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Capture écran  │────▶│  Detection      │────▶│  PyAutoGUI      │
-│  (PIL)          │     │  (OCR/YOLO/VLM) │     │  (Actions)      │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+---
 
-### Méthodes de Détection
+## RÈGLE CRITIQUE
 
-| Méthode | Usage | Précision Coordonnées |
-|---------|-------|----------------------|
-| **EasyOCR** | Détection de texte (menus, boutons) | ✅ Excellente |
-| **YOLO** | Détection d'objets (personnes, objets) | ✅ Bonne |
-| **qwen3-vl** | Compréhension d'image, raisonnement | ❌ Pas de coordonnées précises |
+⚠️ **Les VLM (qwen3-vl, UI-TARS, etc.) ne donnent PAS de coordonnées pixel précises !**
 
-⚠️ **Important**: Les VLM (qwen3-vl, etc.) ne donnent PAS de coordonnées pixel précises. Utiliser OCR ou YOLO pour la localisation.
+- Pour cliquer sur du **texte** (menu, bouton) → utiliser **OCR (EasyOCR)**
+- Pour cliquer sur un **objet** (personne) → utiliser **YOLO**
+- Pour **comprendre/décider** → utiliser **VLM**
 
-## Fichiers Principaux
+---
 
-| Fichier | Rôle |
-|---------|------|
-| `agent_gui.py` | Agent générique avec VLM - capture écran, envoie au VLM, exécute actions |
-| `smart_agent.py` | Agent avec mémoire persistante - apprend des missions réussies |
-| `tiktok_copier_lien.py` | Copie le lien d'une vidéo TikTok via OCR |
-| `ocr_utils.py` | **Fonctions OCR** - détection de texte avec coordonnées (EasyOCR) |
-| `chrome_utils.py` | Fonctions Chrome (ouvrir/fermer onglet, URL) |
-| `notepad_utils.py` | Fonctions Notepad (ouvrir, écrire, sauvegarder, fermer) |
-| `explorer_utils.py` | Fonctions Explorateur (ouvrir dossier, naviguer) |
-| `window_utils.py` | Fonctions fenêtres (minimiser, maximiser, fermer, ancrer) |
-| `mouse_utils.py` | Fonctions souris (clic, double-clic, drag, scroll) |
+## Tous les Modules et Fonctions
 
-## Module OCR (ocr_utils.py)
-
-Utilise **EasyOCR** pour détecter du texte à l'écran avec coordonnées précises.
-
+### ocr_utils.py - Détection de texte (COORDONNÉES PRÉCISES)
 ```python
-from ocr_utils import find_text_on_screen, click_on_text
+from ocr_utils import find_text_on_screen, click_on_text, find_all_text_on_screen
 
-# Trouver un texte et obtenir ses coordonnées
+# Trouver un texte → retourne {x, y, confidence, text, bbox}
 result = find_text_on_screen("Copier le lien")
 if result:
     print(f"Trouvé à ({result['x']}, {result['y']})")
 
 # Trouver et cliquer directement
 click_on_text("Enregistrer")
+
+# Lister tous les textes à l'écran
+texts = find_all_text_on_screen()
 ```
 
-### Fonctions disponibles:
-- `find_text_on_screen(text)` - trouve un texte, retourne {x, y, confidence}
-- `find_all_text_on_screen()` - liste tous les textes détectés
-- `click_on_text(text)` - trouve et clique sur un texte
+### tiktok_copier_lien.py - Copier lien TikTok
+```python
+from tiktok_copier_lien import copier_lien_tiktok, ouvrir_tiktok_droite
 
-## Module YOLO (ultralytics)
+# Ouvre TikTok à droite de l'écran
+ouvrir_tiktok_droite()
 
-Pour la détection d'objets (personnes, etc.).
+# Copie le lien via clic droit + OCR
+lien = copier_lien_tiktok(video_x=1200, video_y=400)
+```
 
+### chrome_utils.py - Contrôle Chrome
+```python
+from chrome_utils import (
+    ouvrir_onglet,      # Ctrl+T
+    fermer_onglet,      # Ctrl+W
+    ouvrir_url,         # Ouvre une URL
+    focus_chrome,       # Met Chrome au premier plan
+    is_chrome_running,  # Vérifie si Chrome tourne
+    launch_chrome       # Lance Chrome
+)
+```
+
+### notepad_utils.py - Contrôle Notepad
+```python
+from notepad_utils import (
+    ouvrir_notepad,     # Ouvre Notepad
+    ecrire_texte,       # Écrit du texte
+    effacer_tout,       # Efface tout
+    sauvegarder,        # Sauvegarde (chemin)
+    fermer_notepad,     # Ferme Notepad
+    nouveau_fichier     # Nouveau fichier
+)
+```
+
+### explorer_utils.py - Contrôle Explorateur Windows
+```python
+from explorer_utils import (
+    ouvrir_explorateur, # Ouvre l'Explorateur
+    ouvrir_dossier,     # Ouvre un dossier
+    naviguer_vers,      # Navigue vers un chemin
+    remonter_dossier,   # Remonte au parent
+    retour,             # Navigation arrière
+    avant,              # Navigation avant
+    nouveau_dossier,    # Crée un dossier
+    rechercher,         # Recherche
+    fermer_explorateur  # Ferme
+)
+```
+
+### window_utils.py - Contrôle Fenêtres
+```python
+from window_utils import (
+    lister_fenetres,    # Liste les fenêtres
+    focus_fenetre,      # Focus par process/titre
+    minimiser_fenetre,  # Win+Down
+    maximiser_fenetre,  # Win+Up
+    fermer_fenetre,     # Alt+F4
+    minimiser_tout,     # Win+D
+    basculer_fenetre,   # Alt+Tab
+    fenetre_gauche,     # Win+Left
+    fenetre_droite,     # Win+Right
+    fermer_application  # Force kill
+)
+```
+
+### mouse_utils.py - Contrôle Souris
+```python
+from mouse_utils import (
+    position,           # Position actuelle
+    deplacer,           # Déplace la souris
+    clic,               # Clic gauche
+    clic_droit,         # Clic droit
+    double_clic,        # Double clic
+    triple_clic,        # Triple clic
+    drag,               # Glisser-déposer
+    scroll_haut,        # Scroll vers le haut
+    scroll_bas          # Scroll vers le bas
+)
+```
+
+### YOLO - Détection d'objets
 ```python
 from ultralytics import YOLO
-model = YOLO('yolov8n.pt')
+
+model = YOLO('yolov8n.pt')  # Nano, rapide
 results = model('screenshot.png')
+
 for box in results[0].boxes:
+    cls = int(box.cls[0])
+    label = model.names[cls]  # 'person', 'car', etc.
     x1, y1, x2, y2 = box.xyxy[0].tolist()
     center_x = int((x1 + x2) / 2)
     center_y = int((y1 + y2) / 2)
+    print(f"{label} à ({center_x}, {center_y})")
 ```
 
-## Configuration Technique
+---
 
-- **OCR**: EasyOCR (GPU)
-- **Détection objets**: YOLO v8 (ultralytics)
-- **VLM** (raisonnement): qwen3-vl:30b (Ollama)
-- **API Ollama**: http://localhost:11434/api/generate
-- **GPU**: RTX 3090 24GB
-- **Clavier**: AZERTY français (utilise clipboard pour caractères spéciaux)
-
-## Commandes Rapides
+## Commandes CLI
 
 ```bash
-# Copier lien TikTok (TikTok doit être ouvert à droite)
+# Copier lien TikTok (TikTok doit être ouvert)
 python tiktok_copier_lien.py
 
 # Copier lien TikTok (ouvre TikTok automatiquement)
@@ -102,9 +163,14 @@ python ocr_utils.py find "Mon texte"
 # Trouver et cliquer sur un texte
 python ocr_utils.py click "Enregistrer"
 
-# Agent VLM simple
+# Lister tous les textes
+python ocr_utils.py all
+
+# Agent VLM
 python agent_gui.py "Ta mission"
 ```
+
+---
 
 ## Dépendances
 
@@ -118,16 +184,23 @@ ultralytics>=8.0.0
 opencv-python>=4.8.0
 ```
 
-## Points d'Attention pour le Développement
+---
 
-1. **Failsafe PyAutoGUI**: Désactivé dans les scripts (`pyautogui.FAILSAFE = False`)
-2. **OCR vs VLM**: Utiliser OCR pour les coordonnées précises, VLM pour le raisonnement
-3. **Initialisation EasyOCR**: Lente au premier appel (charge le modèle), rapide ensuite
-4. **Focus fenêtre**: Toujours cliquer sur la fenêtre cible avant de taper du texte
-5. **YOLO modèles**: `yolov8n.pt` (nano, rapide), `yolov8n-pose.pt` (détection de pose)
+## Points d'Attention
 
-## Workflow Recommandé pour Cliquer sur un Élément
+1. **Failsafe PyAutoGUI**: Désactivé (`pyautogui.FAILSAFE = False`)
+2. **OCR lent au 1er appel**: EasyOCR charge le modèle, rapide ensuite
+3. **Focus fenêtre**: Toujours cliquer sur la fenêtre cible avant de taper
+4. **Clavier AZERTY**: Utiliser clipboard pour caractères spéciaux
+5. **YOLO modèles**: `yolov8n.pt` (rapide), `yolov8n-pose.pt` (pose/keypoints)
 
-1. **Texte/Menu/Bouton** → Utiliser `ocr_utils.find_text_on_screen()`
-2. **Personne/Objet** → Utiliser YOLO
-3. **Décision complexe** → Utiliser VLM pour comprendre, puis OCR/YOLO pour agir
+---
+
+## Workflow Type
+
+1. **Capturer l'écran** → `ImageGrab.grab()`
+2. **Trouver l'élément** :
+   - Texte → `ocr_utils.find_text_on_screen()`
+   - Objet → YOLO
+3. **Agir** → `pyautogui.click(x, y)`
+4. **Vérifier** → recapturer et analyser
