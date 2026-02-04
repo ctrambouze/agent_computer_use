@@ -204,3 +204,44 @@ time.sleep(1)
 Stats lues: {'likes': '1.6M', 'comments': '10.4K', 'partages': '?'}
 Fichier: C:\Users\MSI\Desktop\tiktok_amz_ocean.txt
 ```
+
+---
+
+## Mission 3: Enchainer plusieurs vidéos (2026-02-04) ✅
+
+### Objectif
+Capturer les stats et liens de plusieurs vidéos TikTok à la suite, dans un seul fichier.
+
+### Commande
+```bash
+python tiktok_mission.py --open --multi --nb 5
+```
+
+### Workflow
+```python
+for i in range(nb_videos):
+    # 1. Focus + lire stats (VLM)
+    stats = lire_stats_vlm()
+
+    # 2. Copier lien (clic droit + OCR)
+    lien = copier_lien_video()
+
+    # 3. Scroll vers video suivante
+    pyautogui.scroll(-3)
+    time.sleep(2)
+
+# 4. Sauvegarder tout dans un fichier
+sauvegarder_sur_bureau(rapport, "tiktok_5_videos.txt")
+```
+
+### Résultat (5 vidéos)
+```
+| # | Compte                | Likes  | Comments |
+|---|----------------------|--------|----------|
+| 1 | @boursogram_         | 56     | 2        |
+| 2 | @blackbutterflyharris| 4852   | 282      |
+| 3 | @estherium__         | 36.2K  | 241      |
+| 4 | @ecomcoachsofian     | 4873   | 90       |
+| 5 | @mediwaraa           | 70.5K  | 753      |
+```
+Fichier: `C:\Users\MSI\Desktop\tiktok_5_videos.txt`
