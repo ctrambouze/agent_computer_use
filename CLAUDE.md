@@ -1,5 +1,7 @@
 # Agent GUI Autonome - Context pour Claude
 
+**GitHub**: https://github.com/ctrambouze/agent_computer_use
+
 ## IMPORTANT : Fichier Mission
 **Toujours lire `mission.md` en premier** - contient l'état actuel du travail en cours et l'historique des actions.
 
