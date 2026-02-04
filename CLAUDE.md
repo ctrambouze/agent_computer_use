@@ -26,6 +26,10 @@ Tourne 100% en local sur RTX 3090 avec le modèle qwen3-vl:30b via Ollama.
 | `tiktok_analyzer.py` | Script spécialisé pour analyser les vidéos TikTok |
 | `memory.json` | Base de données des missions apprises (JSON) |
 | `chrome_utils.py` | Fonctions utilitaires Chrome (ouvrir/fermer onglet, URL) |
+| `notepad_utils.py` | Fonctions utilitaires Notepad (ouvrir, ecrire, sauvegarder, fermer) |
+| `explorer_utils.py` | Fonctions utilitaires Explorateur (ouvrir dossier, naviguer) |
+| `window_utils.py` | Fonctions utilitaires fenetres (minimiser, maximiser, fermer, ancrer) |
+| `mouse_utils.py` | Fonctions utilitaires souris (clic, double-clic, drag, scroll) |
 
 ## Configuration Technique
 
