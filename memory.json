@@ -1,0 +1,69 @@
+{
+  "missions": [
+    {
+      "name": "ouvrir notepad",
+      "keywords": ["notepad", "bloc-notes", "editeur texte"],
+      "steps": [
+        {"action": "hotkey", "params": ["win"]},
+        {"action": "type", "params": ["notepad"]},
+        {"action": "hotkey", "params": ["enter"]},
+        {"action": "wait", "params": [2]}
+      ]
+    },
+    {
+      "name": "ouvrir chrome",
+      "keywords": ["chrome", "navigateur", "browser"],
+      "steps": [
+        {"action": "hotkey", "params": ["win"]},
+        {"action": "type", "params": ["chrome"]},
+        {"action": "hotkey", "params": ["enter"]},
+        {"action": "wait", "params": [2]}
+      ]
+    },
+    {
+      "name": "aller sur un site",
+      "keywords": ["site", "url", "aller sur", "naviguer", ".com", ".fr"],
+      "steps": [
+        {"action": "hotkey", "params": ["ctrl", "l"]},
+        {"action": "type", "params": ["$URL"]},
+        {"action": "hotkey", "params": ["enter"]},
+        {"action": "wait", "params": [3]}
+      ]
+    },
+    {
+      "name": "nouveau fichier notepad",
+      "keywords": ["nouveau fichier", "new file", "ctrl+n"],
+      "steps": [
+        {"action": "hotkey", "params": ["ctrl", "n"]}
+      ]
+    },
+    {
+      "name": "ouvrir tiktok",
+      "keywords": ["tiktok", "tik tok"],
+      "steps": [
+        {"action": "hotkey", "params": ["win"]},
+        {"action": "type", "params": ["chrome"]},
+        {"action": "hotkey", "params": ["enter"]},
+        {"action": "wait", "params": [2]},
+        {"action": "hotkey", "params": ["ctrl", "l"]},
+        {"action": "type", "params": ["https://www.tiktok.com/foryou"]},
+        {"action": "hotkey", "params": ["enter"]},
+        {"action": "wait", "params": [4]}
+      ]
+    },
+    {
+      "name": "scroll tiktok",
+      "keywords": ["scroll", "video suivante", "next video", "defiler"],
+      "steps": [
+        {"action": "scroll", "params": [-5]}
+      ]
+    },
+    {
+      "name": "menu demarrer",
+      "keywords": ["menu demarrer", "start menu", "demarrer"],
+      "steps": [
+        {"action": "hotkey", "params": ["win"]}
+      ]
+    }
+  ]
+}
