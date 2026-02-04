@@ -25,6 +25,7 @@ Tourne 100% en local sur RTX 3090 avec le modèle qwen3-vl:30b via Ollama.
 | `smart_agent.py` | Agent avec mémoire persistante - apprend des missions réussies |
 | `tiktok_analyzer.py` | Script spécialisé pour analyser les vidéos TikTok |
 | `memory.json` | Base de données des missions apprises (JSON) |
+| `chrome_utils.py` | Fonctions utilitaires Chrome (ouvrir/fermer onglet, URL) |
 
 ## Configuration Technique
 
