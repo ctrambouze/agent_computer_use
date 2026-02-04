@@ -6,82 +6,102 @@
 ## Description du Projet
 
 Agent IA autonome qui contrôle un ordinateur Windows via vision (capture d'écran) + actions (souris/clavier).
-Tourne 100% en local sur RTX 3090 avec le modèle qwen3-vl:30b via Ollama.
+Tourne 100% en local sur RTX 3090.
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Capture écran  │────▶│  qwen3-vl:30b   │────▶│  PyAutoGUI      │
-│  (PIL)          │     │  (Ollama)       │     │  (Actions)      │
+│  Capture écran  │────▶│  Detection      │────▶│  PyAutoGUI      │
+│  (PIL)          │     │  (OCR/YOLO/VLM) │     │  (Actions)      │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
+
+### Méthodes de Détection
+
+| Méthode | Usage | Précision Coordonnées |
+|---------|-------|----------------------|
+| **EasyOCR** | Détection de texte (menus, boutons) | ✅ Excellente |
+| **YOLO** | Détection d'objets (personnes, objets) | ✅ Bonne |
+| **qwen3-vl** | Compréhension d'image, raisonnement | ❌ Pas de coordonnées précises |
+
+⚠️ **Important**: Les VLM (qwen3-vl, etc.) ne donnent PAS de coordonnées pixel précises. Utiliser OCR ou YOLO pour la localisation.
 
 ## Fichiers Principaux
 
 | Fichier | Rôle |
 |---------|------|
-| `agent_gui.py` | Agent générique avec vision - capture écran, envoie au VLM, exécute actions |
+| `agent_gui.py` | Agent générique avec VLM - capture écran, envoie au VLM, exécute actions |
 | `smart_agent.py` | Agent avec mémoire persistante - apprend des missions réussies |
-| `tiktok_analyzer.py` | Script spécialisé pour analyser les vidéos TikTok |
-| `memory.json` | Base de données des missions apprises (JSON) |
-| `chrome_utils.py` | Fonctions utilitaires Chrome (ouvrir/fermer onglet, URL) |
-| `notepad_utils.py` | Fonctions utilitaires Notepad (ouvrir, ecrire, sauvegarder, fermer) |
-| `explorer_utils.py` | Fonctions utilitaires Explorateur (ouvrir dossier, naviguer) |
-| `window_utils.py` | Fonctions utilitaires fenetres (minimiser, maximiser, fermer, ancrer) |
-| `mouse_utils.py` | Fonctions utilitaires souris (clic, double-clic, drag, scroll) |
+| `tiktok_copier_lien.py` | Copie le lien d'une vidéo TikTok via OCR |
+| `ocr_utils.py` | **Fonctions OCR** - détection de texte avec coordonnées (EasyOCR) |
+| `chrome_utils.py` | Fonctions Chrome (ouvrir/fermer onglet, URL) |
+| `notepad_utils.py` | Fonctions Notepad (ouvrir, écrire, sauvegarder, fermer) |
+| `explorer_utils.py` | Fonctions Explorateur (ouvrir dossier, naviguer) |
+| `window_utils.py` | Fonctions fenêtres (minimiser, maximiser, fermer, ancrer) |
+| `mouse_utils.py` | Fonctions souris (clic, double-clic, drag, scroll) |
+
+## Module OCR (ocr_utils.py)
+
+Utilise **EasyOCR** pour détecter du texte à l'écran avec coordonnées précises.
+
+```python
+from ocr_utils import find_text_on_screen, click_on_text
+
+# Trouver un texte et obtenir ses coordonnées
+result = find_text_on_screen("Copier le lien")
+if result:
+    print(f"Trouvé à ({result['x']}, {result['y']})")
+
+# Trouver et cliquer directement
+click_on_text("Enregistrer")
+```
+
+### Fonctions disponibles:
+- `find_text_on_screen(text)` - trouve un texte, retourne {x, y, confidence}
+- `find_all_text_on_screen()` - liste tous les textes détectés
+- `click_on_text(text)` - trouve et clique sur un texte
+
+## Module YOLO (ultralytics)
+
+Pour la détection d'objets (personnes, etc.).
+
+```python
+from ultralytics import YOLO
+model = YOLO('yolov8n.pt')
+results = model('screenshot.png')
+for box in results[0].boxes:
+    x1, y1, x2, y2 = box.xyxy[0].tolist()
+    center_x = int((x1 + x2) / 2)
+    center_y = int((y1 + y2) / 2)
+```
 
 ## Configuration Technique
 
-- **Modèle VLM**: qwen3-vl:30b (Ollama)
+- **OCR**: EasyOCR (GPU)
+- **Détection objets**: YOLO v8 (ultralytics)
+- **VLM** (raisonnement): qwen3-vl:30b (Ollama)
 - **API Ollama**: http://localhost:11434/api/generate
-- **GPU**: RTX 3090 24GB (~20GB VRAM utilisés)
+- **GPU**: RTX 3090 24GB
 - **Clavier**: AZERTY français (utilise clipboard pour caractères spéciaux)
-
-## Particularités de qwen3-vl
-
-⚠️ **Important**: qwen3-vl retourne ses réponses dans le champ `thinking`, pas `response`.
-Le code doit vérifier les deux champs:
-```python
-result = data.get("response", "")
-thinking = data.get("thinking", "")
-if not result.strip() and thinking:
-    result = thinking
-```
-
-## Actions Supportées
-
-L'agent comprend ces commandes:
-- `click at (X, Y)` - cliquer aux coordonnées
-- `type "texte"` - taper du texte (via clipboard pour AZERTY)
-- `press win/enter/tab/escape` - touches spéciales
-- `hotkey ctrl+l` - combinaisons de touches
-- `scroll down/up` - défiler
-- `wait N` - attendre N secondes
-- `DONE` - mission terminée
 
 ## Commandes Rapides
 
 ```bash
-# Agent simple
+# Copier lien TikTok (TikTok doit être ouvert à droite)
+python tiktok_copier_lien.py
+
+# Copier lien TikTok (ouvre TikTok automatiquement)
+python tiktok_copier_lien.py --open
+
+# Trouver un texte à l'écran
+python ocr_utils.py find "Mon texte"
+
+# Trouver et cliquer sur un texte
+python ocr_utils.py click "Enregistrer"
+
+# Agent VLM simple
 python agent_gui.py "Ta mission"
-
-# Agent avec mémoire
-python smart_agent.py "Ta mission"
-
-# Voir la mémoire
-python smart_agent.py --memory
-
-# Analyseur TikTok
-python tiktok_analyzer.py
-```
-
-## Raccourcis Batch (après ajout au PATH)
-
-```bash
-agent "Ta mission"      # agent_gui.py
-smart "Ta mission"      # smart_agent.py avec mémoire
-tiktok                  # Analyseur TikTok
 ```
 
 ## Dépendances
@@ -91,19 +111,21 @@ pyautogui>=0.9.54
 Pillow>=10.0.0
 requests>=2.31.0
 pyperclip>=1.8.0
+easyocr>=1.7.0
+ultralytics>=8.0.0
+opencv-python>=4.8.0
 ```
 
 ## Points d'Attention pour le Développement
 
 1. **Failsafe PyAutoGUI**: Désactivé dans les scripts (`pyautogui.FAILSAFE = False`)
-2. **Timeout Ollama**: 180 secondes pour les requêtes avec images
-3. **Détection DONE**: Utiliser regex `^ACTION:\s*DONE` avec flag MULTILINE
+2. **OCR vs VLM**: Utiliser OCR pour les coordonnées précises, VLM pour le raisonnement
+3. **Initialisation EasyOCR**: Lente au premier appel (charge le modèle), rapide ensuite
 4. **Focus fenêtre**: Toujours cliquer sur la fenêtre cible avant de taper du texte
+5. **YOLO modèles**: `yolov8n.pt` (nano, rapide), `yolov8n-pose.pt` (détection de pose)
 
-## Améliorations Futures Possibles
+## Workflow Recommandé pour Cliquer sur un Élément
 
-- [ ] Support multi-écrans
-- [ ] Enregistrement vidéo des sessions
-- [ ] Interface web pour lancer les missions
-- [ ] Plus de modèles VLM supportés
-- [ ] Détection d'erreurs et retry automatique
+1. **Texte/Menu/Bouton** → Utiliser `ocr_utils.find_text_on_screen()`
+2. **Personne/Objet** → Utiliser YOLO
+3. **Décision complexe** → Utiliser VLM pour comprendre, puis OCR/YOLO pour agir

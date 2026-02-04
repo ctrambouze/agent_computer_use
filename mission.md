@@ -1,12 +1,24 @@
 # Mission en cours
 
 ## Problème initial
-L'agent GUI avec VLM (qwen3-vl) ne suit pas bien les instructions - se perd en boucles répétitives.
+L'agent GUI avec VLM (qwen3-vl) ne donne pas de coordonnées pixel précises - se perd en boucles répétitives.
 
 ## Solution adoptée
-Fonctions directes PyAutoGUI sans VLM pour les tâches simples et répétitives.
+- **OCR (EasyOCR)** pour détecter du texte avec coordonnées précises
+- **YOLO** pour détecter des objets (personnes, etc.)
+- VLM uniquement pour le raisonnement, pas pour les coordonnées
 
 ## Fonctions créées
+
+### ocr_utils.py (NOUVEAU - TESTE OK)
+- `find_text_on_screen(text)` - trouve un texte, retourne {x, y, confidence}
+- `find_all_text_on_screen()` - liste tous les textes détectés
+- `click_on_text(text)` - trouve et clique sur un texte
+- `get_reader()` - initialise EasyOCR (cache singleton)
+
+### tiktok_copier_lien.py (REFAIT - TESTE OK)
+- `ouvrir_tiktok_droite()` - ouvre TikTok et ancre à droite
+- `copier_lien_tiktok()` - clic droit + OCR pour trouver "Copier le lien"
 
 ### chrome_utils.py (TESTE OK)
 - `ouvrir_onglet()` - ouvre un nouvel onglet Chrome (Ctrl+T)
@@ -52,17 +64,19 @@ Fonctions directes PyAutoGUI sans VLM pour les tâches simples et répétitives.
 - `scroll_haut(n)` / `scroll_bas(n)` - scroll
 
 ## Tests effectués
-- [x] capture_screen() - OK
-- [x] send_to_model() - OK (qwen3-vl voit l'écran)
-- [x] parse_action() - OK
-- [x] execute_action() - OK
-- [x] ouvrir_onglet() - OK
-- [x] fermer_onglet() - OK
-- [x] 5 cycles ouvrir/fermer - OK
+- [x] OCR find_text_on_screen() - OK
+- [x] OCR click_on_text() - OK
+- [x] YOLO détection personne - OK
+- [x] Copier lien TikTok via OCR - OK
+- [x] Toutes les fonctions utilitaires - OK
 
-## Prochaines étapes
-- [ ] Autres fonctions utilitaires si besoin
-- [ ] Intégrer dans l'agent principal
+## Apprentissages clés
+
+⚠️ **Les VLM ne donnent PAS de coordonnées précises !**
+- qwen3-vl, UI-TARS, etc. : comprennent les images mais inventent les coordonnées
+- Pour des coordonnées pixel : utiliser OCR (texte) ou YOLO (objets)
 
 ## Historique
-- 2026-02-04 : Diagnostic complet, création chrome_utils.py
+- 2026-02-04 : Diagnostic complet, création chrome_utils.py et autres utils
+- 2026-02-04 : Ajout ocr_utils.py avec EasyOCR - FONCTIONNE pour coordonnées précises
+- 2026-02-04 : TikTok copier lien via OCR - SUCCES
