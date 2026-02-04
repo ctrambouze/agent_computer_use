@@ -205,9 +205,10 @@ def mission_tiktok(compte="", likes="", comments="", partages="", contenu=""):
     print("MISSION TIKTOK")
     print("=" * 50)
 
-    # Focus Chrome AVANT tout - clic sur zone TikTok pour forcer le focus
-    pyautogui.click(240, 300)
-    time.sleep(0.5)
+    # Focus Chrome - juste un clic sur la zone TikTok
+    print("Focus TikTok...")
+    pyautogui.click(100, 400)
+    time.sleep(1)
 
     # Lire les stats avec VLM AVANT le clic droit (pour avoir la video visible)
     if not likes or not comments:
