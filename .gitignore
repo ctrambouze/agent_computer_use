@@ -2,3 +2,11 @@ __pycache__/
 *.pyc
 nul
 .env
+.env.*
+*.png
+*.jpg
+*.pt
+tiktok_coords.json
+lien_tiktok.txt
+tiktok_url.txt
+lien_final.txt

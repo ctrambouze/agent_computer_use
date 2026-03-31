@@ -1,0 +1,15 @@
+{
+  "model": {
+    "provider": "openai-compatible",
+    "id": "qwen3-vl:30b",
+    "baseURL": "http://localhost:11434/v1",
+    "apiKey": "ollama",
+    "displayName": "Qwen3-VL 30B (Local)"
+  },
+  "toolCallEngine": "prompt_engineering",
+  "stream": true,
+  "logLevel": "info",
+  "server": {
+    "exclusive": false
+  }
+}

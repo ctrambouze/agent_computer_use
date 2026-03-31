@@ -257,6 +257,36 @@ Date: {time.strftime('%Y-%m-%d %H:%M')}
     return filepath
 
 
+def est_un_live():
+    """Verifie si la video actuelle est un LIVE (a eviter)"""
+    screenshot = ImageGrab.grab()
+    tiktok_zone = screenshot.crop((0, 0, 500, 200))
+    tiktok_zone.save('_temp_live_check.png')
+
+    with open('_temp_live_check.png', 'rb') as f:
+        img_base64 = base64.b64encode(f.read()).decode('utf-8')
+
+    try:
+        response = requests.post(
+            "http://localhost:11434/api/generate",
+            json={
+                "model": "qwen3-vl:30b",
+                "prompt": "Est-ce un LIVE TikTok? Reponds uniquement par OUI ou NON.",
+                "images": [img_base64],
+                "stream": False
+            },
+            timeout=30
+        )
+        if response.status_code == 200:
+            data = response.json()
+            result = data.get("response", "") or data.get("thinking", "")
+            if "OUI" in result.upper():
+                return True
+    except:
+        pass
+    return False
+
+
 def mission_multiple(nb_videos=5):
     """
     Enchaine plusieurs videos TikTok et sauvegarde tout dans un seul fichier
@@ -266,13 +296,22 @@ def mission_multiple(nb_videos=5):
     print("=" * 50)
 
     resultats = []
+    videos_traitees = 0
 
-    for i in range(nb_videos):
-        print(f"\n--- Video {i+1}/{nb_videos} ---")
+    while videos_traitees < nb_videos:
+        print(f"\n--- Video {videos_traitees+1}/{nb_videos} ---")
 
         # Focus TikTok
         pyautogui.click(100, 400)
         time.sleep(0.5)
+
+        # Verifier si c'est un LIVE
+        print("Verification LIVE...")
+        if est_un_live():
+            print("LIVE detecte - on passe")
+            pyautogui.scroll(-3)
+            time.sleep(2)
+            continue
 
         # Lire stats
         stats = lire_stats_vlm()
@@ -282,8 +321,9 @@ def mission_multiple(nb_videos=5):
 
         if lien:
             compte = lien.split('/@')[1].split('/')[0] if '/@' in lien else "inconnu"
+            videos_traitees += 1
             resultats.append({
-                "numero": i + 1,
+                "numero": videos_traitees,
                 "compte": compte,
                 "likes": stats.get("likes", "?"),
                 "comments": stats.get("comments", "?"),
@@ -295,7 +335,7 @@ def mission_multiple(nb_videos=5):
             print("ECHEC copie lien")
 
         # Passer a la video suivante (scroll down)
-        if i < nb_videos - 1:
+        if videos_traitees < nb_videos:
             print("Video suivante...")
             pyautogui.click(240, 400)
             time.sleep(0.3)

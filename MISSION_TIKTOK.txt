@@ -1,0 +1,283 @@
+================================================================================
+                    MISSION TIKTOK ANALYZER v2.0
+                    Document de Reference Complet
+================================================================================
+
+OBJECTIF:
+---------
+Analyser les 10 premieres videos TikTok, collecter toutes les informations
+(titre, likes, commentaires, notes), identifier la video avec le plus de likes,
+copier son lien, et sauvegarder le rapport dans Notepad.
+
+
+================================================================================
+PHASE 1: OUVERTURE DE TIKTOK (Etapes 1-10)
+================================================================================
+
+[1]  Appuyer sur touche Windows
+     -> Action: pyautogui.hotkey('win')
+     -> Delai: 0.5s
+
+[2]  Taper "chrome"
+     -> Action: pyperclip.copy('chrome') + Ctrl+V
+     -> Delai: 0.3s
+
+[3]  Appuyer sur Entree
+     -> Action: pyautogui.press('enter')
+
+[4]  Attendre chargement Chrome
+     -> Delai: 3 secondes
+
+[5]  Ctrl+L pour selectionner la barre d'adresse
+     -> Action: pyautogui.hotkey('ctrl', 'l')
+     -> Delai: 0.3s
+
+[6]  Taper l'URL TikTok
+     -> Action: pyperclip.copy('https://www.tiktok.com/foryou') + Ctrl+V
+     -> Delai: 0.3s
+
+[7]  Appuyer sur Entree
+     -> Action: pyautogui.press('enter')
+
+[8]  Attendre chargement TikTok
+     -> Delai: 5 secondes
+
+[9]  Maximiser la fenetre
+     -> Action: pyautogui.hotkey('win', 'up')
+     -> Delai: 1s
+
+[10] Clic au centre de l'ecran pour focus
+     -> Action: pyautogui.click(960, 540)
+     -> Delai: 1s
+
+
+================================================================================
+PHASE 2: ANALYSE DES 10 VIDEOS (Etapes 11-18 en boucle)
+================================================================================
+
+Pour chaque video (i = 1 a 10):
+
+[11] PAUSE VIDEO - Arreter le defilement
+     -> Action: pyautogui.press('space')
+     -> Action: pyautogui.click(960, 540) (double securite)
+     -> Delai: 0.5s
+
+[12] Attendre stabilisation de l'image
+     -> Delai: 1 seconde
+
+[13] Capture d'ecran
+     -> Action: capture_screen() -> image_b64
+
+[14] Envoi au modele VLM (qwen3-vl:30b)
+     -> Prompt:
+        "Analyse cette video TikTok. Donne-moi EXACTEMENT dans ce format:
+         TITRE: [le titre ou description de la video]
+         LIKES: [nombre de likes - icone coeur sur le cote]
+         COMMENTAIRES: [nombre de commentaires]
+         NOTES: [tout texte/hashtags/description visible en bas de la video]
+         Si tu ne vois pas une info, mets 'N/A'."
+     -> Timeout: 180 secondes
+
+[15] Parser la reponse du VLM
+     -> Extraire: TITRE, LIKES, COMMENTAIRES, NOTES avec regex
+     -> Stocker dans liste results[]
+
+[16] Comparer les likes
+     -> Convertir likes en nombre (K=000, M=000000)
+     -> Si likes > max_likes -> mettre a jour best_video
+
+[17] Scroll vers la video suivante (sauf pour video 10)
+     -> Action: pyautogui.press('space') (reprendre lecture)
+     -> Action: pyautogui.scroll(-5)
+
+[18] Attendre chargement de la video suivante
+     -> Delai: 2 secondes
+
+
+================================================================================
+PHASE 3: RETOUR A LA MEILLEURE VIDEO (Etapes 19-21)
+================================================================================
+
+[19] Calculer le nombre de scrolls necessaires
+     -> Formule: steps_back = 10 - best_video_num
+     -> Exemple: si best = video 3, steps_back = 10 - 3 = 7
+
+[20] Scroll up pour revenir a la meilleure video
+     -> Boucle: pour j = 1 a steps_back
+        -> Action: pyautogui.scroll(5)
+        -> Delai: 1.5s entre chaque scroll
+
+[21] Attendre stabilisation
+     -> Delai: 2 secondes
+     -> Action: pyautogui.press('space') (pause video)
+
+
+================================================================================
+PHASE 4: COPIER LE LIEN (Etapes 22-31)
+================================================================================
+
+[22] Clic au centre pour s'assurer du focus sur la video
+     -> Action: pyautogui.click(960, 540)
+
+[23] Attendre
+     -> Delai: 1 seconde
+
+[24] CLIC DROIT au centre de la video
+     -> Action: pyautogui.click(960, 540, button='right')
+     -> Resultat: menu contextuel TikTok apparait
+
+[25] Attendre l'apparition du menu contextuel
+     -> Delai: 2 secondes
+
+[26] Capture d'ecran du menu contextuel
+     -> Action: capture_screen() -> img
+
+[27] Envoi au VLM pour localiser "Copier le lien"
+     -> Prompt: "Tu vois un menu contextuel TikTok.
+                 Trouve l'option 'Copier le lien' et donne ses coordonnees X, Y.
+                 Reponds UNIQUEMENT: COORDS: x, y"
+
+[28] Parser les coordonnees de la reponse
+     -> Regex: r'(\d+)\s*,\s*(\d+)'
+     -> Extraire x, y
+
+[29] CLIC GAUCHE sur "Copier le lien"
+     -> Action: pyautogui.click(x, y)
+     -> Resultat: lien copie dans le presse-papier
+
+[30] Attendre la copie
+     -> Delai: 1 seconde
+
+[31] Recuperer le lien depuis le presse-papier
+     -> Action: url = pyperclip.paste()
+     -> Stocker dans best_video["url"]
+
+
+================================================================================
+PHASE 5: ECRITURE DANS NOTEPAD (Etapes 32-39)
+================================================================================
+
+[32] Appuyer sur touche Windows
+     -> Action: pyautogui.hotkey('win')
+     -> Delai: 0.5s
+
+[33] Taper "notepad"
+     -> Action: pyperclip.copy('notepad') + Ctrl+V
+     -> Delai: 0.3s
+
+[34] Appuyer sur Entree
+     -> Action: pyautogui.press('enter')
+
+[35] Attendre ouverture de Notepad
+     -> Delai: 2 secondes
+
+[36] Construire et coller le rapport complet
+     -> Contenu du rapport:
+        =============================================
+        === ANALYSE TIKTOK ===
+
+        Date: [date/heure]
+        Nombre de videos analysees: 10
+
+        --- RESULTATS DES 10 VIDEOS ---
+
+        Video 1:
+          Titre: [titre]
+          Likes: [nombre]
+          Commentaires: [nombre]
+          Notes: [notes/hashtags]
+        ----------------------------------------
+        Video 2:
+          ...
+        (repeter pour les 10 videos)
+
+        *** VIDEO AVEC LE PLUS DE LIKES ***
+
+        Video #[numero]
+        Titre: [titre]
+        Likes: [nombre]
+        Commentaires: [nombre]
+        Notes: [notes]
+
+        >>> LIEN DE LA VIDEO <<<
+        [URL complete]
+
+        === FIN DU RAPPORT ===
+        =============================================
+
+     -> Action: pyperclip.copy(rapport) + Ctrl+V
+
+[37] Ctrl+S pour ouvrir la boite de dialogue de sauvegarde
+     -> Action: pyautogui.hotkey('ctrl', 's')
+     -> Delai: 1s
+
+[38] Taper le chemin et nom du fichier
+     -> Chemin: C:\Users\[user]\Desktop\tiktok_analyse.txt
+     -> Action: pyperclip.copy(chemin) + Ctrl+V
+     -> Delai: 0.5s
+
+[39] Appuyer sur Entree pour confirmer la sauvegarde
+     -> Action: pyautogui.press('enter')
+     -> Action: pyautogui.press('enter') (si popup "remplacer fichier")
+     -> Delai: 1s
+
+
+================================================================================
+PHASE 6: FIN DE MISSION (Etapes 40-41)
+================================================================================
+
+[40] Afficher le resume dans la console
+     -> Meilleure video: numero, titre, likes, URL
+
+[41] Confirmer la fin de mission
+     -> Message: "MISSION ACCOMPLIE!"
+
+
+================================================================================
+COMMANDE POUR LANCER LA MISSION
+================================================================================
+
+    python tiktok_analyzer.py
+
+ou avec le raccourci batch (si configure):
+
+    tiktok
+
+
+================================================================================
+DONNEES COLLECTEES
+================================================================================
+
+Pour chaque video:
+- Numero de la video (1-10)
+- Titre/description
+- Nombre de likes
+- Nombre de commentaires
+- Notes/hashtags en bas de la video
+
+Pour la meilleure video:
+- Toutes les infos ci-dessus
+- Lien URL complet
+
+
+================================================================================
+FICHIERS GENERES
+================================================================================
+
+1. Console: Affichage en temps reel de toutes les etapes
+2. Desktop: tiktok_analyse.txt (rapport complet)
+
+
+================================================================================
+GESTION DES ERREURS
+================================================================================
+
+- Si le VLM ne repond pas: timeout de 180 secondes
+- Si les coordonnees du menu ne sont pas trouvees: appui Escape et continuer
+- Si Notepad ne s'ouvre pas: le rapport est quand meme affiche dans la console
+- Interruption clavier (Ctrl+C): arret propre avec message
+
+
+================================================================================
+                         FIN DU DOCUMENT DE MISSION
+================================================================================
